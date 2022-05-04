@@ -1,7 +1,9 @@
+import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { getMovies } from '../../utils/moviesUtils'
 import { Movie } from '../movie comp/Movie';
 import './AllMovies.css'
+
 
 export const AllMovies = () => {
 
@@ -13,7 +15,11 @@ export const AllMovies = () => {
   useEffect(() =>
   {
     (async () => {
-      let {data} = await getMovies()
+      let {data} = await axios.get('http://localhost:1938/movies', {
+        headers: {
+          'Authorization' : `Bearer ${JSON.parse(localStorage.getItem('token'))}`
+        }
+      })
 
       let movieIdFromSS = JSON.parse(sessionStorage.getItem('selected_movie_id'))
       sessionStorage.removeItem('selected_movie_id')

@@ -2,62 +2,89 @@ import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getMovie } from '../../utils/moviesUtils';
 import axios from 'axios';
+import { titleCase, ListCase } from '../../utils/manipulateData'
+
+import { useForm } from 'react-hook-form'
+import { yupResolver } from '@hookform/resolvers/yup'
+import * as yup from 'yup'
+
+const required = 'is a required field';
+const int = 'must be an integer';
+const url = 'must be a valid URL';
+
+const schema = yup.object().shape({
+  name : yup.string().required(`Name ${required}`),
+  genres : yup.mixed().required(`Genres ${required}`),
+  image : yup.string().url(`Image URL ${url}`).required(`Image URL ${required}`),
+  yearPremiered : yup.number()
+                      .typeError(`You must specify a number`)
+                      .required()
+                      .integer(`Premiere year ${int}`)
+                      .min(1888, "Premiere year must be equal or greater than 1888, the year of the world's first movie premiere")
+})
 
 export const EditMovie = () => {
+
+    const { register, handleSubmit, setValue, formState : { errors } } = useForm({
+        resolver : yupResolver(schema)
+    })
 
     const {id} = useParams();
     const navigate = useNavigate();
 
-    const [movie,setMovie] = useState({_id : '', name : '', genres : [], image : '', yearPremiered : 0});
-
+    const [movie,setMovie] = useState({_id : '', name : '', genres : [], image : ''});
+    const {genres,name,image,yearPremiered} = movie;
+    
     useEffect(() =>
     {
         (async () => {
             let {data} = await getMovie(id)
             setMovie(data)
-          })();          
-    },[])
+        })();          
+    },[id])
 
-    const handleChange = (e) =>
+    useEffect(() => {
+        setValue('name',name)
+        setValue('genres',genres.join(','))
+        setValue('image',image)
+        setValue('yearPremiered',yearPremiered)
+    },[movie])
+
+
+    const submitForm = async (data) =>
     {
-        let {name,value} = e.target;
-        if(name === 'genres')
-        {
-            let genresArr = value.split(',').map(str => str.trim());
-            setMovie({...movie, genres : genresArr})
-        }
-        else if(typeof movie[name] === 'number')
-        {
-            setMovie({...movie, [name] : +value})
-        }
-        else
-        {
-            setMovie({...movie, [name] : value})
-        }
-    }
+        let name = titleCase(data.name)
+        let genres = ListCase(data.genres)
 
-    const handleSubmit = async (e) =>
-    {
-        e.preventDefault();
-
-        await axios.put(`http://localhost:1938/movies/${movie._id}`, movie)
+        const data2 = {...data,name,genres}
+        await axios.put(`http://localhost:1938/movies/${id}`, data2)
         alert('movie updated')
         navigate('/main/movies/all-movies')
     }
 
     return (
         <div >
-            <h3>Edit Movie - {movie.name}</h3>
-            <form onSubmit={handleSubmit} >
-            <label>
-                Name: <input type="text" value={movie.name} name="name" onChange={handleChange} />
-                Genres: <input type="text" value={movie.genres} name="genres" onChange={handleChange} />
-                Image URL: <input type="text" value={movie.image} name="image" onChange={handleChange} />
-                Premier year: <input type="number" value={movie.yearPremiered} name="yearPremiered" onChange={handleChange} /> <br />
-                <input type="submit" value="update" />
-                <input type="button" value="cancel" onClick={() => navigate('/main/movies/all-movies')} />
-            </label>
-            </form>
+            <h3>Edit Movie - {name}</h3>
+            <form onSubmit={handleSubmit(submitForm)}>
+        <div>
+          Name : <input type="text" name="name" {...register('name')} />
+          <p>{errors.name?.message}</p>
+        </div>
+        <div>
+          Genres : <input type="text" name="genres" {...register('genres')} />
+          <p>{errors.genres?.message}</p>
+        </div>
+        <div>
+          Image URL : <input type="text" name="image" {...register('image')} />
+          <p>{errors.image?.message}</p>
+        </div>
+        <div>
+          Premiere Year : <input type="text" name="yearPremiered" {...register('yearPremiered')} />
+          <p>{errors.yearPremiered?.message}</p>
+        </div>
+        <input type="submit" value="save" />
+        <input type="button" value="cancel" onClick={() => navigate('/main/movies/all-movies')} />
+      </form>
         </div>
     )
 }

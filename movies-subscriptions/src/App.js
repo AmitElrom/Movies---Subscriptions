@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
+import ProtectedRoute from './components/protectedRoute/ProtectedRoute';
 
 // child components
 import { Login } from './components/login comp/Login';
@@ -22,6 +23,7 @@ function App() {
         <Route path='/login' element={<Login />} />
         <Route path='/register' element={<Register />} />
         <Route path='/register-login' element={<RegisterLogin />} />
+          <Route path="/main" element={<ProtectedRoute />}>
         <Route path='/main' element={<Main />} >
           <Route path='/main/movies/:id' element={<EditMovie />} />
           <Route path='movies' element={<Movies />} >
@@ -34,6 +36,8 @@ function App() {
             <Route path='add-member' element={<AddMember />} />
           </Route>
         </Route>
+        </Route>
+            <Route path='*' element={<div>Not Found</div>} />
       </Routes>
     </div>
   );
